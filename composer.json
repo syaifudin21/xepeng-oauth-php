@@ -1,0 +1,23 @@
+{
+    "name": "xepeng/oauth-php",
+    "description": "Xepeng OAuth PHP SDK",
+    "type": "library",
+    "require": {
+        "php": "^7.4 || ^8.0",
+        "guzzlehttp/guzzle": "^7.0",
+        "ext-json": "*"
+    },
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Xepeng\\OAuth\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Xepeng",
+            "email": "dev@xepeng.com"
+        }
+    ],
+    "minimum-stability": "stable"
+}
