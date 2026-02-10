@@ -21,6 +21,7 @@ $client = new Client([
     'client_id' => 'your-client-id',
     'client_secret' => 'your-client-secret',
     'redirect_uri' => 'http://your-app.com/callback',
+    'env' => 'production', // optional, defaults to 'development'
     'scopes' => ['profile', 'email'], // optional
 ]);
 

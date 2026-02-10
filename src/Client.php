@@ -4,6 +4,7 @@ namespace Xepeng\OAuth;
 
 use GuzzleHttp\Client as HttpClient;
 use GuzzleHttp\Exception\GuzzleException;
+use GuzzleHttp\Exception\RequestException;
 use Xepeng\OAuth\Exceptions\OAuthException;
 use Xepeng\OAuth\Storage\SessionStorage;
 use Xepeng\OAuth\Storage\StorageInterface;
@@ -14,9 +15,21 @@ class Client
     private $storage;
     private $httpClient;
 
+    const ENV_URLS = [
+        'development' => [
+            'base_url' => 'https://staging-app.xepeng.com',
+            'api_base_url' => 'https://staging-api.xepeng.com',
+        ],
+        'production' => [
+            'base_url' => 'https://app.xepeng.com',
+            'api_base_url' => 'https://api.xepeng.com',
+        ],
+    ];
+
     const DEFAULT_CONFIG = [
-        'base_url' => 'https://staging-app.xepeng.com',
-        'api_base_url' => 'https://staging-api.xepeng.com',
+        'env' => 'development', // 'development' or 'production'
+        'base_url' => null,
+        'api_base_url' => null,
         'scopes' => ['profile', 'email'],
         'storage' => 'session',
         'auto_refresh' => true,
@@ -26,6 +39,17 @@ class Client
     public function __construct(array $config)
     {
         $this->config = array_merge(self::DEFAULT_CONFIG, $config);
+
+        // Resolve URLs based on env
+        $env = $this->config['env'] ?? 'development';
+        $envUrls = self::ENV_URLS[$env] ?? self::ENV_URLS['development'];
+
+        if (empty($this->config['base_url'])) {
+            $this->config['base_url'] = $envUrls['base_url'];
+        }
+        if (empty($this->config['api_base_url'])) {
+            $this->config['api_base_url'] = $envUrls['api_base_url'];
+        }
         
         if (isset($this->config['storage_adapter']) && $this->config['storage_adapter'] instanceof StorageInterface) {
             $this->storage = $this->config['storage_adapter'];
@@ -236,7 +260,7 @@ class Client
             $data = json_decode($response->getBody(), true);
             $this->storeTokens($data);
             return $data;
-        } catch (GuzzleException $e) {
+        } catch (RequestException $e) {
              // Try to parse error response
              $responseBody = $e->getResponse() ? (string) $e->getResponse()->getBody() : null;
              $errorData = $responseBody ? json_decode($responseBody, true) : [];
@@ -245,6 +269,8 @@ class Client
              $code = $errorData['error'] ?? 'token_error';
              
              throw new OAuthException($msg, $code, $e->getCode(), $e);
+        } catch (GuzzleException $e) {
+            throw new OAuthException($e->getMessage(), 'token_error', $e->getCode(), $e);
         }
     }
 
